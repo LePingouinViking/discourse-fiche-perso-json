@@ -1,442 +1,349 @@
 import { withPluginApi } from "discourse/lib/plugin-api";
 
-export default {
-  name: "fiche-perso-json",
+function escapeHtml(value) {
+  if (!value && value !== 0) {
+    return "";
+  }
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
-  initialize() {
-    withPluginApi("0.11.1", (api) => {
-      // --- Constantes communes avec la page HTML de création de fiche ---
-      const MAGIES = [
-        { key: "KaelrunThar", label: "Kaelrun’Thar — Feu Sourd (nain)" },
-        { key: "AevoraLys", label: "Aevora’Lys — Souffle Vivant (wyverien)" },
-        { key: "AerThalan", label: "Aer’Thalan — Parole de l’Orage (skayane)" },
-        { key: "NarethEn", label: "Nareth’En — Art du Lien (humain)" },
-        { key: "LireaNym", label: "Lirea’Nym — Mémoire des Marées (lireathi)" },
-        { key: "ElyndarKaen", label: "Elyndar’Kaen — Voix du Silence (aelran)" },
-        { key: "OrmahDur", label: "Ormah’Dur — Souffle Rouge (orc)" },
-        { key: "SerynThalor", label: "Seryn’Thalor — Chant des Astres" },
-        { key: "VaelSoth", label: "Vael’Soth — Ombre du Chant (interdite)" },
-        { key: "ThalyrEn", label: "Thalyr’En — Vibration du monde" },
-        { key: "MyrSael", label: "Myr’Sael — Souffle des rêves" },
-        { key: "OrisTael", label: "Oris’Tael — Compas des âges" },
-      ];
+function safeText(value) {
+  return value ? String(value) : "";
+}
 
-      const ARTS_MUETS = [
-        { key: "OndeStable",        label: "L’onde stable" },
-        { key: "GeometrieVide",     label: "La géométrie du vide" },
-        { key: "HarmoniquePensee",  label: "L’harmonique de pensée" },
-        { key: "ResonanceFractale", label: "La résonance fractale" },
-        { key: "MesureAbsolue",     label: "La mesure absolue" },
-        { key: "VibrationDirigee",  label: "La vibration dirigée" },
-        { key: "CalculResonnant",   label: "Le calcul résonnant" },
-        { key: "DisciplineNeant",   label: "La discipline du néant" },
-        { key: "ArtSilencePur",     label: "L’art du silence pur" },
-      ];
+// Convertit les sauts de lignes en <br>
+function nl2br(value) {
+  if (!value) {
+    return "";
+  }
+  return escapeHtml(value).replace(/\n/g, "<br>");
+}
 
-      const esc = (v) =>
-        v
-          ? String(v)
-              .replace(/&/g, "&amp;")
-              .replace(/</g, "&lt;")
-              .replace(/>/g, "&gt;")
-              .replace(/"/g, "&quot;")
-              .replace(/'/g, "&#039;")
-          : "";
+// Mapping des magies (doit correspondre aux clés de la page HTML)
+const MAGIES_LABELS = {
+  KaelrunThar: "Kaelrun’Thar — Feu Sourd (nain)",
+  AevoraLys: "Aevora’Lys — Souffle Vivant (wyverien)",
+  AerThalan: "Aer’Thalan — Parole de l’Orage (skayane)",
+  NarethEn: "Nareth’En — Art du Lien (humain)",
+  LireaNym: "Lirea’Nym — Mémoire des Marées (lireathi)",
+  ElyndarKaen: "Elyndar’Kaen — Voix du Silence (aelran)",
+  OrmahDur: "Ormah’Dur — Souffle Rouge (orc)",
+  SerynThalor: "Seryn’Thalor — Chant des Astres",
+  VaelSoth: "Vael’Soth — Ombre du Chant (interdite)",
+  ThalyrEn: "Thalyr’En — Vibration du monde",
+  MyrSael: "Myr’Sael — Souffle des rêves",
+  OrisTael: "Oris’Tael — Compas des âges"
+};
 
-      const nl2br = (v) => (v ? esc(v).replace(/\n/g, "<br>") : "");
+// Arts muets
+const ARTS_MUETS_LABELS = {
+  OndeStable: "L’onde stable",
+  GeometrieVide: "La géométrie du vide",
+  HarmoniquePensee: "L’harmonique de pensée",
+  ResonanceFractale: "La résonance fractale",
+  MesureAbsolue: "La mesure absolue",
+  VibrationDirigee: "La vibration dirigée",
+  CalculResonnant: "Le calcul résonnant",
+  DisciplineNeant: "La discipline du néant",
+  ArtSilencePur: "L’art du silence pur"
+};
 
-      const renderCardHtml = (dataRaw) => {
-        const data = dataRaw || {};
+function renderCardFromData(data) {
+  const nom = escapeHtml(data.nom || "(Sans nom)");
+  const surnom = safeText(data.surnom);
+  const avatar = safeText(data.avatarUrl);
+  const peuple = escapeHtml(data.peuple || "—");
+  const sousFaction = escapeHtml(data.sousFaction || "");
+  const origine = escapeHtml(data.lieuOrigine || "—");
+  const alignement = escapeHtml(data.alignement || "—");
+  const age = escapeHtml(data.age || "—");
+  const taille = escapeHtml(data.taille || "—");
+  const poids = escapeHtml(data.poids || "—");
+  const estFerreux = !!data.estFerreux;
+  const estPNJ = !!data.drapeauPNJ;
 
-        const magiesBadges = MAGIES
-          .filter((m) => data.magies && data.magies[m.key])
-          .map(
-            (m) =>
-              `<span class="fiche-perso-pill fiche-perso-pill-magic">${esc(
-                m.label
-              )}</span>`
-          )
-          .join(" ");
+  const descriptionCourte = nl2br(data.descriptionCourte || "");
+  const historique = nl2br(data.historique || "");
+  const objectifs = nl2br(data.objectifs || "");
+  const inventaire = nl2br(data.inventaire || "");
+  const contacts = nl2br(data.contacts || "");
+  const notes = nl2br(data.notes || "");
+  const comboNotes = nl2br(data.combinaisonNotes || "");
+  const artsMuetsNotes = nl2br(data.artsMuetsNotes || "");
 
-        const artsBadges = ARTS_MUETS
-          .filter((a) => data.artsMuets && data.artsMuets[a.key])
-          .map(
-            (a) =>
-              `<span class="fiche-perso-pill fiche-perso-pill-art">${esc(
-                a.label
-              )}</span>`
-          )
-          .join(" ");
+  const traits = Array.isArray(data.traits) ? data.traits : [];
+  const faiblesses = Array.isArray(data.faiblesses) ? data.faiblesses : [];
 
-        const traitsHtml = (data.traits || [])
-          .map(
-            (t) => `<span class="fiche-perso-pill">${esc(t)}</span>`
-          )
-          .join(" ");
+  const magies = data.magies && typeof data.magies === "object" ? data.magies : {};
+  const artsMuets = data.artsMuets && typeof data.artsMuets === "object" ? data.artsMuets : {};
 
-        const faibHtml = (data.faiblesses || [])
-          .map(
-            (t) =>
-              `<span class="fiche-perso-pill fiche-perso-pill-faib">${esc(
-                t
-              )}</span>`
-          )
-          .join(" ");
+  const magiesHtml = Object.keys(magies)
+    .filter((key) => magies[key])
+    .map((key) => {
+      const label = MAGIES_LABELS[key] || key;
+      return `<span class="fiche-perso-badge">${escapeHtml(label)}</span>`;
+    })
+    .join(" ");
 
-        const updatedAt = data.updatedAt
-          ? new Date(data.updatedAt).toLocaleString("fr-FR")
-          : "";
+  const artsMuetsHtml = Object.keys(artsMuets)
+    .filter((key) => artsMuets[key])
+    .map((key) => {
+      const label = ARTS_MUETS_LABELS[key] || key;
+      return `<span class="fiche-perso-pill">${escapeHtml(label)}</span>`;
+    })
+    .join(" ");
 
-        return `
+  const traitsHtml = traits
+    .map((t) => `<span class="fiche-perso-pill">${escapeHtml(t)}</span>`)
+    .join(" ");
+
+  const faiblessesHtml = faiblesses
+    .map((t) => `<span class="fiche-perso-pill fiche-perso-pill-weak">${escapeHtml(t)}</span>`)
+    .join(" ");
+
+  const metaParts = [];
+  if (peuple && peuple !== "—") {
+    metaParts.push(peuple);
+  }
+  if (sousFaction) {
+    metaParts.push(sousFaction);
+  }
+  if (origine && origine !== "—") {
+    metaParts.push(origine);
+  }
+
+  const metaLine = metaParts.join(" • ");
+
+  return `
 <div class="fiche-perso-card">
   <div class="fiche-perso-header">
     ${
-      data.avatarUrl
+      avatar
         ? `<div class="fiche-perso-avatar">
-            <img src="${esc(data.avatarUrl)}" alt="Avatar de ${esc(
-            data.nom || "personnage"
-          )}">
-          </div>`
+          <img src="${escapeHtml(
+            avatar
+          )}" alt="Avatar de ${nom}">
+        </div>`
         : ""
     }
     <div class="fiche-perso-main">
-      <h2 class="fiche-perso-nom">
-        ${esc(data.nom) || "Nom inconnu"}
+      <div class="fiche-perso-title-row">
+        <h2 class="fiche-perso-nom">
+          ${nom}
+          ${
+            surnom
+              ? `<span class="fiche-perso-surnom">« ${escapeHtml(surnom)} »</span>`
+              : ""
+          }
+        </h2>
         ${
-          data.surnom
-            ? `<span class="fiche-perso-surnom">— « ${esc(
-                data.surnom
-              )} »</span>`
-            : ""
-        }
-      </h2>
-      <p class="fiche-perso-meta">
-        ${[data.peuple, data.sousFaction, data.lieuOrigine]
-          .filter(Boolean)
-          .map(esc)
-          .join(" — ") || "—"}
-      </p>
-      <div class="fiche-perso-tags">
-        ${
-          data.estFerreux
-            ? `<span class="fiche-perso-badge fiche-perso-badge-ferreux">Ferreux</span>`
-            : ""
-        }
-        ${
-          data.drapeauPNJ
+          estPNJ
             ? `<span class="fiche-perso-badge fiche-perso-badge-pnj">PNJ</span>`
+            : ""
+        }
+        ${
+          estFerreux
+            ? `<span class="fiche-perso-badge fiche-perso-badge-ferreux">Ferreux</span>`
             : ""
         }
       </div>
       ${
-        updatedAt
-          ? `<div class="fiche-perso-date">Dernière mise à jour : ${esc(
-              updatedAt
-            )}</div>`
+        metaLine
+          ? `<p class="fiche-perso-meta">${metaLine}</p>`
           : ""
       }
     </div>
   </div>
 
   <div class="fiche-perso-body">
+    ${
+      descriptionCourte
+        ? `<div class="fiche-perso-section">
+            <h3>Description</h3>
+            <p class="fiche-perso-desc">${descriptionCourte}</p>
+          </div>`
+        : ""
+    }
 
-    <div class="fiche-perso-section-grid">
-      <section>
-        <h3>Profil</h3>
-        <div>Origine : ${esc(data.lieuOrigine || "—")}</div>
-        <div>Alignement : ${esc(data.alignement || "—")}</div>
-        <div>Âge : ${esc(data.age || "—")}</div>
-        <div>Taille : ${esc(data.taille || "—")}</div>
-        <div>Poids : ${esc(data.poids || "—")}</div>
-      </section>
-      <section>
-        <h3>Description</h3>
-        <p class="fiche-perso-desc">${nl2br(
-          data.descriptionCourte || "—"
-        )}</p>
-      </section>
-    </div>
-
-    <div class="fiche-perso-section-grid">
+    <div class="fiche-perso-section fiche-perso-stats">
       ${
-        data.historique
-          ? `<section>
-              <h3>Histoire</h3>
-              <p>${nl2br(data.historique)}</p>
-            </section>`
+        age !== "—"
+          ? `<div><span>Âge</span><strong>${age}</strong></div>`
           : ""
       }
       ${
-        data.objectifs
-          ? `<section>
-              <h3>Objectifs</h3>
-              <p>${nl2br(data.objectifs)}</p>
-            </section>`
+        taille !== "—"
+          ? `<div><span>Taille</span><strong>${taille}</strong></div>`
+          : ""
+      }
+      ${
+        poids !== "—"
+          ? `<div><span>Poids</span><strong>${poids}</strong></div>`
+          : ""
+      }
+      ${
+        alignement !== "—"
+          ? `<div><span>Alignement</span><strong>${alignement}</strong></div>`
+          : ""
+      }
+      ${
+        origine !== "—"
+          ? `<div><span>Origine</span><strong>${origine}</strong></div>`
           : ""
       }
     </div>
 
-    <div class="fiche-perso-section-grid">
-      <section>
-        <h3>Traits</h3>
-        <div>${traitsHtml || "—"}</div>
-        <h3 style="margin-top:1rem">Faiblesses</h3>
-        <div>${faibHtml || "—"}</div>
-      </section>
-      <section>
-        <h3>Magies maîtrisées</h3>
-        <div>${magiesBadges || "—"}</div>
+    <div class="fiche-perso-grid">
+      <div>
+        <div class="fiche-perso-section">
+          <h3>Traits</h3>
+          <div>${traitsHtml || "<em>Aucun renseigné</em>"}</div>
+        </div>
+        <div class="fiche-perso-section">
+          <h3>Faiblesses</h3>
+          <div>${faiblessesHtml || "<em>Aucune renseignée</em>"}</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="fiche-perso-section">
+          <h3>Magies maîtrisées</h3>
+          <div>${magiesHtml || "<em>Aucune magie renseignée</em>"}</div>
+        </div>
         ${
-          data.combinaisonNotes
-            ? `<h4>Notes de combinaisons (Art du Lien)</h4>
-               <p class="fiche-perso-notes-combo">${nl2br(
-                 data.combinaisonNotes
-               )}</p>`
+          comboNotes
+            ? `<div class="fiche-perso-section">
+                <h4>Notes de combinaisons</h4>
+                <p>${comboNotes}</p>
+              </div>`
             : ""
         }
-      </section>
+      </div>
     </div>
 
-    <div class="fiche-perso-section-grid">
-      <section>
-        <h3>Arts muets pratiqués</h3>
-        <div>${artsBadges || "—"}</div>
+    <div class="fiche-perso-grid">
+      <div>
+        <div class="fiche-perso-section">
+          <h3>Arts muets pratiqués</h3>
+          <div>${artsMuetsHtml || "<em>—</em>"}</div>
+        </div>
         ${
-          data.artsMuetsNotes
-            ? `<p class="fiche-perso-notes-arts">${nl2br(
-                data.artsMuetsNotes
-              )}</p>`
+          artsMuetsNotes
+            ? `<div class="fiche-perso-section">
+                <h4>Notes d’art muet</h4>
+                <p>${artsMuetsNotes}</p>
+              </div>`
             : ""
         }
-      </section>
-      <section>
-        ${
-          data.inventaire
-            ? `<h3>Inventaire</h3>
-               <p>${nl2br(data.inventaire)}</p>`
-            : ""
-        }
-        ${
-          data.contacts
-            ? `<h3 style="margin-top:1rem">Contacts / Alliés / Rivaux</h3>
-               <p>${nl2br(data.contacts)}</p>`
-            : ""
-        }
-      </section>
+      </div>
+
+      <div>
+        <div class="fiche-perso-section">
+          <h3>Inventaire & ressources</h3>
+          <p>${inventaire || "<em>—</em>"}</p>
+        </div>
+        <div class="fiche-perso-section">
+          <h3>Contacts / Alliés / Rivaux</h3>
+          <p>${contacts || "<em>—</em>"}</p>
+        </div>
+      </div>
     </div>
 
     ${
-      data.notes
+      historique
         ? `<div class="fiche-perso-section">
-             <h3>Notes</h3>
-             <p>${nl2br(data.notes)}</p>
-           </div>`
+            <h3>Histoire</h3>
+            <p>${historique}</p>
+          </div>`
         : ""
     }
 
     ${
-      data.drapeauPNJ
+      objectifs
         ? `<div class="fiche-perso-section">
-             <span class="fiche-perso-badge fiche-perso-badge-pnj-large">
-               PERSONNAGE NON-JOUEUR (PNJ)
-             </span>
-           </div>`
+            <h3>Objectifs</h3>
+            <p>${objectifs}</p>
+          </div>`
         : ""
     }
 
+    ${
+      notes
+        ? `<div class="fiche-perso-section">
+            <h3>Notes</h3>
+            <p>${notes}</p>
+          </div>`
+        : ""
+    }
   </div>
-</div>`;
-      };
+</div>
+`;
+}
 
-      // --- Décoration des messages ---
-      api.decorateCookedElement(
-        (elem) => {
-          // Cherche les pièces jointes JSON
-          elem.querySelectorAll('a.attachment[href$=".json"]').forEach(
-            (link) => {
-              if (link.dataset.fichePersoEnhanced === "1") {
-                return;
-              }
-              link.dataset.fichePersoEnhanced = "1";
+function decorateCooked(elem) {
+  if (!elem) {
+    return;
+  }
 
-              fetch(link.href)
-                .then((r) => r.text())
-                .then((text) => {
-                  let data;
-                  try {
-                    data = JSON.parse(text);
-                  } catch (e) {
-                    console.error(
-                      "JSON invalide pour fiche perso :",
-                      e
-                    );
-                    return;
-                  }
+  const links = elem.querySelectorAll('a.attachment[href$=".json"]');
 
-                  const card = document.createElement("div");
-                  card.className = "fiche-perso-wrapper";
-                  card.innerHTML = renderCardHtml(data);
+  links.forEach((link) => {
+    if (link.dataset.fichePersoEnhanced === "1") {
+      return;
+    }
+    link.dataset.fichePersoEnhanced = "1";
 
-                  // Le lien reste pour téléchargement
-                  link.classList.add("fiche-perso-json-link");
-                  link.textContent = "Télécharger la fiche (JSON)";
+    fetch(link.href)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Réponse HTTP incorrecte");
+        }
+        return response.text();
+      })
+      .then((text) => {
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          // JSON invalide, on log et on laisse juste le lien
+          /* eslint-disable no-console */
+          console.error("JSON invalide pour fiche perso :", e);
+          /* eslint-enable no-console */
+          return;
+        }
 
-                  // On insère la fiche sous le lien
-                  link.insertAdjacentElement("afterend", card);
-                })
-                .catch((e) => {
-                  console.error(
-                    "Erreur de chargement de la fiche perso JSON :",
-                    e
-                  );
-                });
-            }
-          );
-        },
-        { id: "fiche-perso-json-renderer" }
-      );
-    });
-  },
-};                        ? `
-                    <div class="fiche-perso-avatar">
-                      <img src="${safe(
-                        data.avatarUrl
-                      )}" alt="Avatar de ${safe(data.nom) || "personnage"}">
-                    </div>`
-                        : ""
-                    }
-                    <div class="fiche-perso-main">
-                      <h2 class="fiche-perso-nom">
-                        ${safe(data.nom) || "Nom inconnu"}
-                        ${
-                          safe(data.surnom)
-                            ? `<span class="fiche-perso-surnom">« ${safe(
-                                data.surnom
-                              )} »</span>`
-                            : ""
-                        }
-                      </h2>
-                      <p class="fiche-perso-meta">
-                        ${[
-                          safe(data.peuple),
-                          safe(data.sousFaction),
-                          safe(data.lieuOrigine),
-                        ]
-                          .filter(Boolean)
-                          .join(" — ")}
-                      </p>
-                    </div>
-                  </div>
+        const wrapper = document.createElement("div");
+        wrapper.className = "fiche-perso-wrapper";
+        wrapper.innerHTML = renderCardFromData(data);
 
-                  <div class="fiche-perso-body">
-                    ${
-                      safe(data.descriptionCourte)
-                        ? `<p class="fiche-perso-desc">${safe(
-                            data.descriptionCourte
-                          )}</p>`
-                        : ""
-                    }
+        // On garde le lien pour téléchargement
+        link.classList.add("fiche-perso-json-link");
+        link.textContent = "Télécharger la fiche (JSON)";
 
-                    <div class="fiche-perso-stats">
-                      ${
-                        safe(data.age)
-                          ? `<div><span>Âge</span><strong>${safe(
-                              data.age
-                            )}</strong></div>`
-                          : ""
-                      }
-                      ${
-                        safe(data.taille)
-                          ? `<div><span>Taille</span><strong>${safe(
-                              data.taille
-                            )}</strong></div>`
-                          : ""
-                      }
-                      ${
-                        safe(data.poids)
-                          ? `<div><span>Poids</span><strong>${safe(
-                              data.poids
-                            )}</strong></div>`
-                          : ""
-                      }
-                      ${
-                        safe(data.alignement)
-                          ? `<div><span>Alignement</span><strong>${safe(
-                              data.alignement
-                            )}</strong></div>`
-                          : ""
-                      }
-                    </div>
+        // Insérer la carte après le lien
+        link.insertAdjacentElement("afterend", wrapper);
+      })
+      .catch((e) => {
+        /* eslint-disable no-console */
+        console.error("Erreur de chargement de la fiche perso JSON :", e);
+        /* eslint-enable no-console */
+      });
+  });
+}
 
-                    ${
-                      safe(data.historique)
-                        ? `
-                      <div class="fiche-perso-section">
-                        <h3>Histoire</h3>
-                        <p>${safe(data.historique)}</p>
-                      </div>`
-                        : ""
-                    }
+export default {
+  name: "fiche-perso-json",
 
-                    ${
-                      safe(data.objectifs)
-                        ? `
-                      <div class="fiche-perso-section">
-                        <h3>Objectifs</h3>
-                        <p>${safe(data.objectifs)}</p>
-                      </div>`
-                        : ""
-                    }
-
-                    ${
-                      safe(data.inventaire)
-                        ? `
-                      <div class="fiche-perso-section">
-                        <h3>Inventaire</h3>
-                        <p>${safe(data.inventaire)}</p>
-                      </div>`
-                        : ""
-                    }
-
-                    ${
-                      safe(data.contacts)
-                        ? `
-                      <div class="fiche-perso-section">
-                        <h3>Contacts</h3>
-                        <p>${safe(data.contacts)}</p>
-                      </div>`
-                        : ""
-                    }
-
-                    ${
-                      safe(data.notes)
-                        ? `
-                      <div class="fiche-perso-section">
-                        <h3>Notes</h3>
-                        <p>${safe(data.notes)}</p>
-                      </div>`
-                        : ""
-                    }
-                  </div>
-                `;
-
-                // Le lien reste pour téléchargement
-                link.classList.add("fiche-perso-json-link");
-                link.textContent = "Télécharger la fiche (JSON)";
-
-                // On insère la fiche sous le lien
-                link.insertAdjacentElement("afterend", card);
-              })
-              .catch((e) => {
-                console.error(
-                  "Erreur de chargement de la fiche perso JSON :",
-                  e
-                );
-              });
-          });
-        },
-        { id: "fiche-perso-json-renderer" }
-      );
+  initialize() {
+    withPluginApi("0.11.1", (api) => {
+      api.decorateCookedElement(decorateCooked, {
+        id: "fiche-perso-json-renderer",
+      });
     });
   },
 };
