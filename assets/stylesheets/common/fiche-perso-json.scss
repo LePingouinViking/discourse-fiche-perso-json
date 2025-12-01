@@ -1,0 +1,94 @@
+.fiche-perso-card {
+  margin-top: 0.75rem;
+  padding: 1.2rem 1.4rem;
+  border-radius: 14px;
+  border: 2px solid rgba(201, 160, 74, 0.9);
+  background: rgba(249, 237, 207, 0.9);
+  box-shadow:
+    inset 0 0 12px rgba(0, 0, 0, 0.06),
+    0 6px 12px rgba(0, 0, 0, 0.18);
+  font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+}
+
+.fiche-perso-header {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.fiche-perso-avatar img {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid rgba(201, 160, 74, 0.9);
+}
+
+.fiche-perso-nom {
+  margin: 0;
+  font-family: "Uncial Antiqua", "Cormorant Garamond", serif;
+  font-size: 1.6rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.fiche-perso-surnom {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 1rem;
+  font-style: italic;
+  color: #7a4a20;
+}
+
+.fiche-perso-meta {
+  margin: 0.3rem 0 0;
+  font-size: 0.95rem;
+  color: #5a3a20;
+}
+
+.fiche-perso-desc {
+  margin-bottom: 0.8rem;
+  font-size: 1.05rem;
+}
+
+.fiche-perso-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin-bottom: 0.8rem;
+  font-size: 0.95rem;
+}
+
+.fiche-perso-stats div span {
+  display: block;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7a5a30;
+}
+
+.fiche-perso-stats div strong {
+  display: block;
+  font-size: 1.05rem;
+  color: #2b1b12;
+}
+
+.fiche-perso-section {
+  margin-top: 0.6rem;
+}
+
+.fiche-perso-section h3 {
+  margin: 0 0 0.2rem;
+  font-family: "Uncial Antiqua", "Cormorant Garamond", serif;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.fiche-perso-json-link {
+  display: inline-block;
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
