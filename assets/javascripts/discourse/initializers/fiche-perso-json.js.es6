@@ -37,7 +37,9 @@ const MAGIES_LABELS = {
   VaelSoth: "Vael’Soth — Ombre du Chant (interdite)",
   ThalyrEn: "Thalyr’En — Vibration du monde",
   MyrSael: "Myr’Sael — Souffle des rêves",
-  OrisTael: "Oris’Tael — Compas des âges"
+  OrisTael: "Oris’Tael — Compas des âges",
+  // 🔹 Nouvelle entrée pour la magie indéterminée / inconnue
+  MagieInconnue: "Magie indéterminée ou inconnue",
 };
 
 // Arts muets
@@ -50,7 +52,7 @@ const ARTS_MUETS_LABELS = {
   VibrationDirigee: "La vibration dirigée",
   CalculResonnant: "Le calcul résonnant",
   DisciplineNeant: "La discipline du néant",
-  ArtSilencePur: "L’art du silence pur"
+  ArtSilencePur: "L’art du silence pur",
 };
 
 function renderCardFromData(data) {
@@ -75,12 +77,16 @@ function renderCardFromData(data) {
   const notes = nl2br(data.notes || "");
   const comboNotes = nl2br(data.combinaisonNotes || "");
   const artsMuetsNotes = nl2br(data.artsMuetsNotes || "");
+  // 🔹 Nouveau : description de la magie inconnue
+  const magieInconnueDesc = nl2br(data.magieInconnueDesc || "");
 
   const traits = Array.isArray(data.traits) ? data.traits : [];
   const faiblesses = Array.isArray(data.faiblesses) ? data.faiblesses : [];
 
-  const magies = data.magies && typeof data.magies === "object" ? data.magies : {};
-  const artsMuets = data.artsMuets && typeof data.artsMuets === "object" ? data.artsMuets : {};
+  const magies =
+    data.magies && typeof data.magies === "object" ? data.magies : {};
+  const artsMuets =
+    data.artsMuets && typeof data.artsMuets === "object" ? data.artsMuets : {};
 
   const magiesHtml = Object.keys(magies)
     .filter((key) => magies[key])
@@ -103,7 +109,12 @@ function renderCardFromData(data) {
     .join(" ");
 
   const faiblessesHtml = faiblesses
-    .map((t) => `<span class="fiche-perso-pill fiche-perso-pill-weak">${escapeHtml(t)}</span>`)
+    .map(
+      (t) =>
+        `<span class="fiche-perso-pill fiche-perso-pill-weak">${escapeHtml(
+          t
+        )}</span>`
+    )
     .join(" ");
 
   const metaParts = [];
@@ -118,6 +129,8 @@ function renderCardFromData(data) {
   }
 
   const metaLine = metaParts.join(" • ");
+
+  const hasMagieInconnue = !!magies.MagieInconnue;
 
   return `
 <div class="fiche-perso-card">
@@ -137,7 +150,9 @@ function renderCardFromData(data) {
           ${nom}
           ${
             surnom
-              ? `<span class="fiche-perso-surnom">« ${escapeHtml(surnom)} »</span>`
+              ? `<span class="fiche-perso-surnom">« ${escapeHtml(
+                  surnom
+                )} »</span>`
               : ""
           }
         </h2>
@@ -220,6 +235,14 @@ function renderCardFromData(data) {
             ? `<div class="fiche-perso-section">
                 <h4>Notes de combinaisons</h4>
                 <p>${comboNotes}</p>
+              </div>`
+            : ""
+        }
+        ${
+          hasMagieInconnue && magieInconnueDesc
+            ? `<div class="fiche-perso-section">
+                <h4>Magie indéterminée / inconnue</h4>
+                <p>${magieInconnueDesc}</p>
               </div>`
             : ""
         }
@@ -310,10 +333,7 @@ function decorateCooked(elem) {
         try {
           data = JSON.parse(text);
         } catch (e) {
-          // JSON invalide, on log et on laisse juste le lien
-          /* eslint-disable no-console */
           console.error("JSON invalide pour fiche perso :", e);
-          /* eslint-enable no-console */
           return;
         }
 
@@ -321,17 +341,13 @@ function decorateCooked(elem) {
         wrapper.className = "fiche-perso-wrapper";
         wrapper.innerHTML = renderCardFromData(data);
 
-        // On garde le lien pour téléchargement
         link.classList.add("fiche-perso-json-link");
         link.textContent = "Télécharger la fiche (JSON)";
 
-        // Insérer la carte après le lien
         link.insertAdjacentElement("afterend", wrapper);
       })
       .catch((e) => {
-        /* eslint-disable no-console */
         console.error("Erreur de chargement de la fiche perso JSON :", e);
-        /* eslint-enable no-console */
       });
   });
 }
