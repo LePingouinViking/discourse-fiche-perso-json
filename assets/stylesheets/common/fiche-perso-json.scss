@@ -10,9 +10,18 @@
   border: 1px solid rgba(186, 121, 48, 0.4);  
   position: relative;  
   overflow: hidden;  
-  /* >>> couleur de texte forcée, valable en clair + sombre <<< */
   color: #3b2a0e;
-}  
+}
+
+/* ➜ forcer la couleur de tout le texte à l’intérieur de la carte */
+.fiche-perso-card,
+.fiche-perso-card p,
+.fiche-perso-card li,
+.fiche-perso-card span,
+.fiche-perso-card em,
+.fiche-perso-card strong {
+  color: #3b2a0e !important;
+}
   
 .fiche-perso-card::before {  
   content: "";  
