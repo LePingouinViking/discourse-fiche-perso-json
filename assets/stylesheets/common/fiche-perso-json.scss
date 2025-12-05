@@ -5,9 +5,9 @@
 .fiche-perso-card {
   border-radius: 14px;
   padding: 1.1em 1.3em;
-  background: #fdf7ec;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
-  border: 1px solid rgba(186, 121, 48, 0.4);
+  background: #f3ead7; /* Fond parchemin plus foncé */
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18); /* Ombre légèrement renforcée */
+  border: 1px solid rgba(186, 121, 48, 0.45); /* Bordure un peu plus marquée */
   position: relative;
   overflow: hidden;
 }
