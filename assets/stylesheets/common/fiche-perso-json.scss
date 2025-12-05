@@ -10,18 +10,7 @@
   border: 1px solid rgba(186, 121, 48, 0.4);  
   position: relative;  
   overflow: hidden;  
-  color: #3b2a0e;
-}
-
-/* ➜ forcer la couleur de tout le texte à l’intérieur de la carte */
-.fiche-perso-card,
-.fiche-perso-card p,
-.fiche-perso-card li,
-.fiche-perso-card span,
-.fiche-perso-card em,
-.fiche-perso-card strong {
-  color: #3b2a0e !important;
-}
+}  
   
 .fiche-perso-card::before {  
   content: "";  
@@ -194,6 +183,7 @@
 }  
   
 /* Responsive */  
+  
 @media (max-width: 700px) {  
   .fiche-perso-card {  
     padding: 0.9em 1em;  
@@ -212,9 +202,15 @@
   .fiche-perso-grid {  
     grid-template-columns: 1fr;  
   }  
-}
-/* Forcer la couleur de TOUT le texte dans la fiche, en toutes circonstances */
+}  
+
+/* === Forcer une couleur de texte sombre pour TOUT le contenu de la fiche === */
+
 .fiche-perso-card,
-.fiche-perso-card * {
+.fiche-perso-card *,
+.fiche-perso-card p,
+.fiche-perso-card li,
+.fiche-perso-card span,
+.fiche-perso-card div {
   color: #3b2a0e !important;
 }
