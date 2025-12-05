@@ -213,3 +213,8 @@
     grid-template-columns: 1fr;  
   }  
 }
+/* Forcer la couleur de TOUT le texte dans la fiche, en toutes circonstances */
+.fiche-perso-card,
+.fiche-perso-card * {
+  color: #3b2a0e !important;
+}
